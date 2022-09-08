@@ -67,12 +67,12 @@ namespace NumericTransformer
                 {
                     if (PlusSize != 0)
                     {
-                        result.PlusDigits[0] = (number1.MinusDigits[i] + number2.MinusDigits[i]) / result.MaxDigitValue;
+                        result.PlusDigits[0] += (result.MinusDigits[i] + number1.MinusDigits[i] + number2.MinusDigits[i]) / result.MaxDigitValue;
                     }
                 }
                 else
                 {
-                    result.MinusDigits[i + 1] = (number1.MinusDigits[i] + number2.MinusDigits[i]) / result.MaxDigitValue;
+                    result.MinusDigits[i + 1] += (result.MinusDigits[i] + number1.MinusDigits[i] + number2.MinusDigits[i]) / result.MaxDigitValue;
                 }
                 result.MinusDigits[i] = (result.MinusDigits[i] + number1.MinusDigits[i] + number2.MinusDigits[i]) % result.MaxDigitValue;
             }
@@ -82,13 +82,13 @@ namespace NumericTransformer
                 {
                     if(0 != (number1.PlusDigits[i] + number2.PlusDigits[i]) / result.MaxDigitValue)
                     {
-                        result = new NumberStruct(result, ++PlusSize, MinusSize);
-                        result.PlusDigits[i + 1] = (number1.PlusDigits[i] + number2.PlusDigits[i]) / result.MaxDigitValue;
+                        result = new NumberStruct(result, 1 + PlusSize, MinusSize);
+                        result.PlusDigits[i + 1] += (result.PlusDigits[i] + number1.PlusDigits[i] + number2.PlusDigits[i]) / result.MaxDigitValue;
                     }
                 }
                 else
                 {
-                    result.PlusDigits[i + 1] = (number1.PlusDigits[i] + number2.PlusDigits[i]) / result.MaxDigitValue;
+                    result.PlusDigits[i + 1] += (result.PlusDigits[i] + number1.PlusDigits[i] + number2.PlusDigits[i]) / result.MaxDigitValue;
                 }
                 result.PlusDigits[i] = (result.PlusDigits[i] + number1.PlusDigits[i] + number2.PlusDigits[i]) % result.MaxDigitValue;
             }
@@ -260,16 +260,222 @@ namespace NumericTransformer
             }
             return result;
         }
+        public static bool operator ==(NumberStruct number1, NumberStruct number2)
+        {
+            if (number1.MaxDigitValue != number2.MaxDigitValue)
+            {
+                throw new Exception("You can't do this with numbers with different MaxDigitValue");
+            }
+            int plusSize = 0;
+            if (number1.PlusSize > number2.PlusSize)
+            {
+                plusSize = number1.PlusSize;
+            }
+            else
+            {
+                plusSize = number2.PlusSize;
+            }
+            int minusSize = 0;
+            if (number1.MinusSize > number2.MinusSize)
+            {
+                minusSize = number1.MinusSize;
+            }
+            else
+            {
+                minusSize = number2.MinusSize;
+            }
+            number1 = new NumberStruct(number1, plusSize, minusSize);
+            number2 = new NumberStruct(number2, plusSize, minusSize);
+            for(int i = 0; i < number1.PlusSize; i++)
+            {
+                if (number1.PlusDigits[i] == number2.PlusDigits[i])
+                {
+
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            for (int i = 0; i < number1.MinusSize; i++)
+            {
+                if (number1.MinusDigits[i] == number2.MinusDigits[i])
+                {
+
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public static bool operator !=(NumberStruct number1, NumberStruct number2)
+        {
+            return !(number1 == number2);
+        }
+        public static bool operator <(NumberStruct number1, NumberStruct number2)
+        {
+            if (number1.MaxDigitValue != number2.MaxDigitValue)
+            {
+                throw new Exception("You can't do this with numbers with different MaxDigitValue");
+            }
+            return number2 > number1;
+        }
+        public static bool operator >(NumberStruct number1, NumberStruct number2)
+        {
+            if (number1.MaxDigitValue != number2.MaxDigitValue)
+            {
+                throw new Exception("You can't do this with numbers with different MaxDigitValue");
+            }
+            int plusSize = 0;
+            if(number1.PlusSize > number2.PlusSize)
+            {
+                plusSize = number1.PlusSize;
+            }
+            else
+            {
+                plusSize = number2.PlusSize;
+            }
+            int minusSize = 0;
+            if (number1.MinusSize > number2.MinusSize)
+            {
+                minusSize = number1.MinusSize;
+            }
+            else
+            {
+                minusSize = number2.MinusSize;
+            }
+            number1 = new NumberStruct(number1, plusSize, minusSize);
+            number2 = new NumberStruct(number2, plusSize, minusSize);
+            for(int i = number1.PlusSize - 1; i >= 0;i--)
+            {
+                if(number1.PlusDigits[i] > number2.PlusDigits[i])
+                {
+                    return true;
+                }
+                else if(number1.PlusDigits[i] < number2.PlusDigits[i])
+                {
+                    return false;
+                }
+                else
+                {
+
+                }
+            }
+            for (int i = number1.MinusSize - 1; i >= 0; i--)
+            {
+                if (number1.MinusDigits[i] > number2.MinusDigits[i])
+                {
+                    return true;
+                }
+                else if (number1.MinusDigits[i] < number2.MinusDigits[i])
+                {
+                    return false;
+                }
+                else
+                {
+
+                }
+            }
+            return false;
+        }
+        static int CalculationAccuracy = 16;
         public static NumberStruct operator /(NumberStruct number1, NumberStruct number2)
         {
+            number1 = number1.CleanUp();
+            number2 = number2.CleanUp();
             if(number1.MaxDigitValue != number2.MaxDigitValue)
             {
                 throw new Exception("You can't do this with numbers with different MaxDigitValue");
             }
-            NumberStruct result = new NumberStruct();
-
-
-            return result.CleanUp();
+            int TransformIndex = 0;
+            if(number2.PlusSize != 0)
+            {
+                TransformIndex = -(number2.PlusSize - 1);
+            }
+            else
+            {
+                bool IsFirstDigitFounded = false;
+                int StartIndex = number2.MinusSize - 1;
+                while(IsFirstDigitFounded == false)
+                {
+                    if (number2.MinusDigits[StartIndex] != 0)
+                    {
+                        IsFirstDigitFounded = true;
+                    }
+                    else
+                    {
+                        TransformIndex++;
+                    }
+                    StartIndex--;
+                }
+            }
+            NumberStruct result = new NumberStruct(number1.MaxDigitValue, number1.PlusSize + TransformIndex < 0 ? 0 : number1.PlusSize + TransformIndex + 1, CalculationAccuracy);
+            NumberStruct approx = new NumberStruct(number1, number1.PlusSize, number1.MinusSize);
+            approx.setZiro();
+            int firstNumberDigitStartIndex;
+            int SeccondNumberDigitStartIndex;
+            if (number1.PlusSize > 0)
+            {
+                firstNumberDigitStartIndex = number1.PlusSize - 1;
+            }
+            else
+            {
+                int Index=0;
+                while (number1.MinusDigits[number1.MinusSize + Index - 1] == 0)
+                {
+                    Index--;
+                }
+                firstNumberDigitStartIndex = Index - 1;
+            }
+            if (number2.PlusSize > 0)
+            {
+                SeccondNumberDigitStartIndex = number2.PlusSize - 1;
+            }
+            else
+            {
+                int Index = 0;
+                while (number2.MinusDigits[number2.MinusSize + Index - 1] == 0)
+                {
+                    Index--;
+                }
+                SeccondNumberDigitStartIndex = Index - 1;
+            }
+            int digitIndex = firstNumberDigitStartIndex - SeccondNumberDigitStartIndex;
+            while(digitIndex > - (CalculationAccuracy))
+            {
+                int digit = 0;
+                while (number1 > approx && digit < number1.MaxDigitValue)
+                {
+                    approx += number2.ShiftTo(digitIndex);
+                    digit++;
+                }
+                if(number1 == approx)
+                {
+                    if (digitIndex >= 0)
+                    {
+                        result.PlusDigits[digitIndex] = digit;
+                    }
+                    else
+                    {
+                        result.MinusDigits[result.MinusSize + digitIndex] = digit;
+                    }
+                    break;
+                }
+                approx -= number2.ShiftTo(digitIndex);
+                digit--;
+                if (digitIndex >= 0)
+                {
+                    result.PlusDigits[digitIndex] = digit;
+                }
+                else
+                {
+                    result.MinusDigits[result.MinusSize + digitIndex] = digit;
+                }
+                digitIndex--;
+            }
+            return result;
         }
         private NumberStruct CleanUp()
         {
@@ -359,30 +565,30 @@ namespace NumericTransformer
         public void TEST1()
         {
             PlusDigits[4] = 0;
-            PlusDigits[3] = 5;
-            PlusDigits[2] = 11;
-            PlusDigits[1] = 5;
-            PlusDigits[0] = 12;
+            PlusDigits[3] = 1;
+            PlusDigits[2] = 0;
+            PlusDigits[1] = 0;
+            PlusDigits[0] = 0;
             MinusDigits[4] = 0;
             MinusDigits[3] = 0;
             MinusDigits[2] = 0;
-            MinusDigits[1] = 5;
+            MinusDigits[1] = 0;
             MinusDigits[0] = 0;
             Console.WriteLine(ToString());
-            //Console.WriteLine(CleanUp().ToString());
+            
         }
         public void TEST2()
         {
             PlusDigits[4] = 0;
-            PlusDigits[3] = 4;
-            PlusDigits[2] = 10;
-            PlusDigits[1] = 15;
-            PlusDigits[0] = 12;
-            MinusDigits[4] = 2;
-            MinusDigits[3] = 12;
-            MinusDigits[2] = 14;
+            PlusDigits[3] = 0;
+            PlusDigits[2] = 0;
+            PlusDigits[1] = 0;
+            PlusDigits[0] = 0;
+            MinusDigits[4] = 0;
+            MinusDigits[3] = 0;
+            MinusDigits[2] = 0;
             MinusDigits[1] = 0;
-            MinusDigits[0] = 0;
+            MinusDigits[0] = 9;
             Console.WriteLine(ToString());
         }
 
