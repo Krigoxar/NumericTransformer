@@ -8,31 +8,11 @@ namespace NumericTransformer
 {
     internal struct NumberStruct
     {
-        private static Dictionary<int, string> DictTranslator = new Dictionary<int, string>()
-        {
-            {-1 ,"-1" },
-            {0 ,"0" },
-            {1 ,"1" },
-            {2 ,"2" },
-            {3 ,"3" },
-            {4 ,"4" },
-            {5 ,"5" },
-            {6 ,"6" },
-            {7 ,"7" },
-            {8 ,"8" },
-            {9 ,"9" },
-            {10 ,"A" },
-            {11 ,"B" },
-            {12 ,"C" },
-            {13 ,"D" },
-            {14 ,"E" },
-            {15 ,"F" },
-        };
         public int MaxDigitValue { get; }
-        private int PlusSize { get; }
-        private int[] PlusDigits;
-        private int MinusSize { get; }
-        private int[] MinusDigits;
+        public int PlusSize { get; }
+        public int[] PlusDigits { get;set; }
+        public int MinusSize { get; }
+        public int[] MinusDigits { get; set; }
 
         public static NumberStruct operator +(NumberStruct number1, NumberStruct number2)
         {
@@ -65,8 +45,9 @@ namespace NumericTransformer
             {
                 if (i == MinusSize - 1)
                 {
-                    if (PlusSize != 0)
+                    if ((result.MinusDigits[i] + number1.MinusDigits[i] + number2.MinusDigits[i]) / result.MaxDigitValue != 0)
                     {
+                        result = new NumberStruct(result, 1 + PlusSize, MinusSize);
                         result.PlusDigits[0] += (result.MinusDigits[i] + number1.MinusDigits[i] + number2.MinusDigits[i]) / result.MaxDigitValue;
                     }
                 }
@@ -80,7 +61,7 @@ namespace NumericTransformer
             {
                 if (i == PlusSize - 1)
                 {
-                    if(0 != (number1.PlusDigits[i] + number2.PlusDigits[i]) / result.MaxDigitValue)
+                    if(0 != (number1.PlusDigits[i] + number2.PlusDigits[i] + result.PlusDigits[i]) / result.MaxDigitValue)
                     {
                         result = new NumberStruct(result, 1 + PlusSize, MinusSize);
                         result.PlusDigits[i + 1] += (result.PlusDigits[i] + number1.PlusDigits[i] + number2.PlusDigits[i]) / result.MaxDigitValue;
@@ -233,7 +214,7 @@ namespace NumericTransformer
             return result.CleanUp();
         }
 
-        private NumberStruct ShiftTo(int Index)
+        public NumberStruct ShiftTo(int Index)
         {
             NumberStruct result = new NumberStruct(this.MaxDigitValue, (PlusSize + Index) < 0 ? 0 : PlusSize + Index, (MinusSize - Index) < 0 ? 0 : MinusSize - Index);
             for (int i = 0; i < MinusSize; i++)
@@ -380,7 +361,32 @@ namespace NumericTransformer
             }
             return false;
         }
-        static int CalculationAccuracy = 16;
+        public static NumberStruct operator^(NumberStruct number,int pow)
+        {
+            NumberStruct result = new NumberStruct(number, number.PlusSize, number.MinusSize);
+            if(pow >= 1)
+            {
+                for (int i = 0; i < pow - 1; i++)
+                {
+                    result = result * number;
+                }
+                return result;
+            }
+            else if(pow == 0)
+            {
+                return new NumberStruct(number.MaxDigitValue, 1);
+            }
+            else if(pow <= -1)
+            {
+                for (int i = 0; i < pow - 1; i++)
+                {
+                    result = result * number;
+                }
+                return new NumberStruct(number.MaxDigitValue, 1) / result;
+            }
+            return new NumberStruct();
+        }
+        static int CalculationAccuracy = 32;
         public static NumberStruct operator /(NumberStruct number1, NumberStruct number2)
         {
             number1 = number1.CleanUp();
@@ -513,6 +519,53 @@ namespace NumericTransformer
             }
             return new NumberStruct(this, PlusSize - plusSize, MinusSize - minusSize);
         }
+        public NumberStruct Structurize()
+        {
+            NumberStruct result = new NumberStruct(this, PlusSize, MinusSize);
+            for (int i = 0; i < MinusSize; i++)
+            {
+                if (i == MinusSize - 1)
+                {
+                    if (PlusSize != 0)
+                    {
+                        result.PlusDigits[0] += (result.MinusDigits[i]) / result.MaxDigitValue;
+                    }
+                }
+                else
+                {
+                    result.MinusDigits[i + 1] += (result.MinusDigits[i]) / result.MaxDigitValue;
+                }
+                result.MinusDigits[i] = (result.MinusDigits[i]) % result.MaxDigitValue;
+            }
+            int PlusSize2 = PlusSize;
+            for (int i = 0; i < PlusSize2; i++)
+            {
+                if (i == PlusSize2 - 1)
+                {
+                    if (0 != (result.PlusDigits[i]) / result.MaxDigitValue)
+                    {
+                        result = new NumberStruct(result, ++PlusSize2, MinusSize);
+                        result.PlusDigits[i + 1] += (result.PlusDigits[i]) / result.MaxDigitValue;
+                    }
+                }
+                else
+                {
+                    result.PlusDigits[i + 1] += (result.PlusDigits[i]) / result.MaxDigitValue;
+                }
+                result.PlusDigits[i] = (result.PlusDigits[i]) % result.MaxDigitValue;
+            }
+            return result.CleanUp();
+        }
+        public NumberStruct(int MaxDigitValue, int Value)
+        {
+            this.MaxDigitValue = MaxDigitValue;
+            this.PlusDigits = new int[1];
+            this.PlusSize = PlusDigits.Length;
+            this.PlusDigits[0] = Value;
+            this.MinusDigits = new int[0];
+            this.MinusSize = MinusDigits.Length;
+            this = this.Structurize();
+        }
         public NumberStruct(int MaxDigitValue, int PlusSize, int MinusSize)
         {
             this.MaxDigitValue = MaxDigitValue;
@@ -520,6 +573,14 @@ namespace NumericTransformer
             this.PlusDigits = new int[PlusSize];
             this.MinusSize = MinusSize;
             this.MinusDigits = new int[MinusSize];
+        }
+        public NumberStruct(int MaxDigitValue, int[] PlusDigits, int[] MinusDigits)
+        {
+            this.MaxDigitValue = MaxDigitValue;
+            this.PlusDigits = PlusDigits;
+            this.PlusSize = PlusDigits.Length;
+            this.MinusDigits = MinusDigits;
+            this.MinusSize = MinusDigits.Length;
         }
         public NumberStruct(NumberStruct number, int PlusSize, int MinusSize)
         {
@@ -564,14 +625,9 @@ namespace NumericTransformer
         }
         public void TEST1()
         {
-            PlusDigits[4] = 0;
-            PlusDigits[3] = 1;
-            PlusDigits[2] = 0;
-            PlusDigits[1] = 0;
-            PlusDigits[0] = 0;
-            MinusDigits[4] = 0;
-            MinusDigits[3] = 0;
-            MinusDigits[2] = 0;
+            MinusDigits[4] = 5;
+            MinusDigits[3] = 5;
+            MinusDigits[2] = 5;
             MinusDigits[1] = 0;
             MinusDigits[0] = 0;
             Console.WriteLine(ToString());
@@ -579,14 +635,9 @@ namespace NumericTransformer
         }
         public void TEST2()
         {
-            PlusDigits[4] = 0;
-            PlusDigits[3] = 0;
-            PlusDigits[2] = 0;
-            PlusDigits[1] = 0;
-            PlusDigits[0] = 0;
-            MinusDigits[4] = 0;
-            MinusDigits[3] = 0;
-            MinusDigits[2] = 0;
+            MinusDigits[4] = 5;
+            MinusDigits[3] = 5;
+            MinusDigits[2] = 5;
             MinusDigits[1] = 0;
             MinusDigits[0] = 9;
             Console.WriteLine(ToString());
@@ -597,14 +648,14 @@ namespace NumericTransformer
             StringBuilder sb = new StringBuilder();
             for (int i = PlusSize - 1; i >= 0; i--)
             {
-                sb.Append(DictTranslator[this.PlusDigits[i]]);
+                sb.Append(this.PlusDigits[i] < 10 ? this.PlusDigits[i].ToString() : (char)(this.PlusDigits[i] - 10 + 'A'));
                 sb.Append('|');
             }
             sb.Append('.');
             for (int i = MinusSize - 1; i >= 0; i--)
             {
                 sb.Append('|');
-                sb.Append(DictTranslator[this.MinusDigits[i]]);
+                sb.Append(this.MinusDigits[i] < 10 ? this.MinusDigits[i].ToString() : (char)(this.MinusDigits[i] - 10 + 'A'));
             }
             return sb.ToString();
         }
